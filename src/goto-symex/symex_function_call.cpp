@@ -178,17 +178,26 @@ void goto_symext::symex_function_call(
 {
   const exprt &function = instruction.call_function();
 
-  // If at some point symex_function_call can support more
-  // expression ids(), like ID_Dereference, please expand the
-  // precondition appropriately.
-  PRECONDITION(function.id() == ID_symbol);
+  PRECONDITION(function.id() == ID_symbol || function.id() == ID_dereference);
 
-  symex_function_call_symbol(
-    get_goto_function,
-    state,
-    instruction.call_lhs(),
-    to_symbol_expr(instruction.call_function()),
-    instruction.call_arguments());
+  if(function.id() == ID_symbol)
+  {
+    symex_function_call_symbol(
+      get_goto_function,
+      state,
+      instruction.call_lhs(),
+      to_symbol_expr(function),
+      instruction.call_arguments());
+  }
+  else if(function.id() == ID_dereference)
+  {
+    symex_function_call_dereference(
+      get_goto_function,
+      state,
+      instruction.call_lhs(),
+      to_dereference_expr(function),
+      instruction.call_arguments());
+  }
 }
 
 void goto_symext::symex_function_call_symbol(
@@ -216,6 +225,19 @@ void goto_symext::symex_function_call_symbol(
 
   symex_function_call_post_clean(
     get_goto_function, state, cleaned_lhs, function, cleaned_arguments);
+}
+
+void goto_symext::symex_function_call_dereference(
+  const get_goto_functiont &get_goto_function,
+  statet &state,
+  const exprt &lhs,
+  const dereference_exprt &function,
+  const exprt::operandst &arguments)
+{
+  // need to clean the function pointer expression
+  auto cleaned_function = clean_expr(function, state, false);
+
+  // we get an if-then-else nest that contains symbols
 }
 
 void goto_symext::symex_function_call_post_clean(
